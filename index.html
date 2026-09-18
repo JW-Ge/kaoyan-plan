@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>警校考研计划助手</title>
-<!-- APP_VERSION: 2026.09.17-v2 -->
-<meta name="description" content="警校学生专属：考研/联考/健身/读书计划管理、打卡与冲突检测">
-<meta name="theme-color" content="#0f3460">
+<title>警校考研全栈助手</title>
+<!-- APP_VERSION: 2026.09.18-v3 -->
+<meta name="description" content="警校学生考研+联考+健身+读书全栈管理：计划、打卡、冲突检测、进度追踪">
+<meta name="theme-color" content="#6366f1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="考研计划">
+<meta name="apple-mobile-web-app-title" content="考研助手">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230f3460'/%3E%3Cstop offset='1' stop-color='%234B3FE3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E%E8%AD%A6%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23312e81'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E%E8%AD%A6%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 <style>
 /* ==================== 基础变量 ==================== */
@@ -23,12 +23,14 @@
   --border:#e9e9f0; --shadow:0 2px 10px rgba(15,52,96,.08);
   --danger:#e5484d; --warning:#f5a623; --success:#2fa84f;
   --tap:rgba(15,52,96,.06);
+  --head-from:#0f3460; --head-to:#4B3FE3; --head-shadow:rgba(79,63,227,.25);
 }
 [data-theme="dark"]{
-  --bg:#131324; --card:#1d2138; --text:#ececf4; --muted:#9698b4; --faint:#6c6e88;
-  --primary:#5b7fc7; --accent:#7c73ff; --accent-soft:#2c2a5e;
-  --border:#2c3049; --shadow:0 2px 10px rgba(0,0,0,.35);
+  --bg:#0f172a; --card:#1e293b; --text:#f8fafc; --muted:#94a3b8; --faint:#64748b;
+  --primary:#818cf8; --accent:#6366f1; --accent-soft:#312e81;
+  --border:#334155; --shadow:0 2px 10px rgba(0,0,0,.35);
   --tap:rgba(255,255,255,.06);
+  --head-from:#1e1b4b; --head-to:#6366f1; --head-shadow:rgba(99,102,241,.35);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -49,10 +51,10 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
 /* ==================== 头部 ==================== */
 .app-header{
   position:sticky;top:0;z-index:30;
-  background:linear-gradient(135deg,#0f3460,#4B3FE3);
+  background:linear-gradient(135deg,var(--head-from),var(--head-to));
   color:#fff;padding:14px 16px 14px;
   padding-top:calc(14px + env(safe-area-inset-top));
-  border-radius:0 0 20px 20px;box-shadow:0 4px 16px rgba(79,63,227,.25);
+  border-radius:0 0 20px 20px;box-shadow:0 4px 16px var(--head-shadow);
 }
 .header-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .header-title{font-size:19px;font-weight:700;letter-spacing:.5px}
@@ -219,9 +221,21 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
 .sheet-actions .row2{display:flex;gap:9px}
 .sheet-actions .row2 .btn{flex:1}
 .toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);background:rgba(20,22,40,.92);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:90;max-width:86%;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
-#updBanner{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);z-index:95;background:linear-gradient(135deg,#0f3460,#4B3FE3);color:#fff;padding:10px 14px;border-radius:14px;font-size:13px;box-shadow:0 6px 20px rgba(75,63,227,.45);display:flex;align-items:center;gap:10px;max-width:92%;animation:upIn .25s ease}
-#updBanner button{background:#fff;color:#4B3FE3;border:0;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;white-space:nowrap}
+#updBanner{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);z-index:95;background:linear-gradient(135deg,#312e81,#6366f1);color:#fff;padding:10px 14px;border-radius:14px;font-size:13px;box-shadow:0 6px 20px rgba(99,102,241,.5);display:flex;align-items:center;gap:10px;max-width:92%;animation:upIn .25s ease}
+#updBanner button{background:#fff;color:#4f46e5;border:0;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;white-space:nowrap}
 @keyframes upIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+/* 资料库 */
+.lib-favbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.lib-favchip{background:var(--accent-soft);color:var(--accent);font-size:12px;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.res-item{border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.res-head{display:flex;align-items:center;gap:9px;padding:12px 12px;background:var(--tap)}
+.res-ic{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.res-nm{flex:1;font-size:13.5px;font-weight:600}
+.res-star{font-size:17px;padding:2px 4px;color:var(--warning);line-height:1}
+.res-arrow{color:var(--muted);font-size:12px;width:12px;text-align:center}
+.res-lines{list-style:none;padding:10px 14px 12px;margin:0}
+.res-lines li{position:relative;padding:5px 0 5px 16px;font-size:13px;color:var(--muted);line-height:1.6}
+.res-lines li::before{content:'•';position:absolute;left:2px;color:var(--accent);font-weight:700}
 .toast.show{opacity:1}
 .empty{text-align:center;color:var(--faint);font-size:13px;padding:30px 10px}
 .empty .eicon{font-size:38px;display:block;margin-bottom:8px;opacity:.55}
@@ -245,7 +259,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
     <button class="tab-btn" data-tab="week"><span class="ti">🗓️</span>周计划</button>
     <button class="tab-btn" data-tab="checkin"><span class="ti">✅</span>打卡</button>
     <button class="tab-btn" data-tab="progress"><span class="ti">📈</span>进度</button>
-    <button class="tab-btn" data-tab="settings"><span class="ti">⚙️</span>设置</button>
+    <button class="tab-btn" data-tab="settings"><span class="ti">👤</span>我的</button>
   </nav>
 </div>
 
@@ -355,13 +369,73 @@ var CAT={
   fitness:{label:'健身',color:'#1a8a1a',bg:'#e3f6e3'},
   liankao:{label:'联考',color:'#e8740c',bg:'#fff0e0'},
   english:{label:'英语',color:'#0d7a6e',bg:'#e0f5f1'},
-  reading:{label:'读书',color:'#b8860b',bg:'#fff6dd'},
+  reading:{label:'读书',color:'#db2777',bg:'#fce7f3'},
   entertainment:{label:'娱乐',color:'#cc3333',bg:'#ffe8e8'},
   review:{label:'复盘',color:'#0088a9',bg:'#dff4f8'},
   free:{label:'自由',color:'#8a8a99',bg:'#f0f0f4'},
   other:{label:'其他',color:'#666',bg:'#ececf2'}
 };
 var STAGES=[['not_started','未开始'],['foundation','基础阶段'],['strengthen','强化阶段'],['sprint','冲刺阶段']];
+
+/* ==================== 资料库 ==================== */
+var RESOURCE_GROUPS=[
+ {id:'policy',icon:'📋',name:'公大招生政策要点',lines:[
+   '专业代码 0838Z1 刑事科学技术',
+   '初试：101政治 + 201英语一 + 302数学二 + 822专业基础综合（物理75 + 化学75，2026年起必选）',
+   '2026复试线：男生370 / 女生394；统考录取31人（45人进复试）',
+   '年龄：入学时不超过27周岁；政审、面试、体检、体测须全部合格',
+   '目标定档：总分 380+（数学120+ / 英语65+ / 政治70+ / 822 100+）']},
+ {id:'s101',icon:'1️⃣',name:'101 思想政治理论 · 目标70',lines:[
+   '老师：徐涛（马原/强化）、腿姐（技巧班/背诵）、肖秀荣（1000题/肖8肖4）',
+   '资料：核心考案、背诵笔记、肖1000题、肖8、肖4、形势与政策小册子',
+   '大三上：徐涛强化班理解为主；大三下：1000题一刷+错题本',
+   '大四上9-10月：腿姐技巧+二刷1000题；11-12月：肖8选择 + 肖4大题狂背']},
+ {id:'s201',icon:'2️⃣',name:'201 英语一 · 目标65',lines:[
+   '阅读40分：唐迟《阅读的逻辑》+ 黄皮书；作文30分：石雷鹏功能句',
+   '翻译10分：唐静《拆分与组合翻译法》；新题型：刘琦；完形：宋逸轩',
+   '长难句/语法：田静《句句真研》；词汇目标 5500（每天50个）',
+   '大二下-大三上：单词+长难句；大三下：2010-2015阅读精做；暑假：二刷+小三门；大四上：整套真题模拟']},
+ {id:'s302',icon:'3️⃣',name:'302 数学二 · 目标125',lines:[
+   '高数78%：汤家凤打基础 → 武忠祥强化；线代22%：李永乐',
+   '资料：高数/线代辅导讲义、660题、330题、历年真题、李林6+4',
+   '大二下-大三上：汤家凤基础过完一遍；大三下：强化+660/330',
+   '暑假：真题一刷整理题型表；大四上：真题二刷+李林模拟。每天雷打不动2小时']},
+ {id:'s822',icon:'4️⃣',name:'822 专业基础综合 · 目标110',lines:[
+   '物理75分：B站宋浩 + 中国大学MOOC，教材程守洙《普通物理学》',
+   '化学75分：B站傅献彩物理化学，教材傅献彩《物理化学》',
+   '大二下-大三上：跟着公安基础物理课同步学；大三下-暑假：系统过力学光学+化学基础',
+   '大四上：公大822真题，背公式和反应方程式']},
+ {id:'liankao',icon:'🛡️',name:'公安联考（保底通道）',lines:[
+   '行测40%：花生十三、高照、顾斐；粉笔/华图/中公真题（判断35题/言语30/资料20/数量10-15/常识15）',
+   '申论30%：杨冰倩 + 公安院校招警申论教材',
+   '公安专业知识30%：母志文、若冰 + 华图/中公公专教材',
+   '策略：大三下前低强度了解，大三下系统学，考研结束后全力冲刺']},
+ {id:'physical',icon:'🏃',name:'体能测评标准（男）',lines:[
+   '50米跑 ≤ 9.2秒 —— 每周2次短跑爆发力',
+   '立定跳远 ≥ 2.05米 —— 跳远技术 + 下肢力量',
+   '1000米跑 ≤ 4分35秒 —— 每周2次长跑，体重降下来后再提速']},
+ {id:'nutrition',icon:'🥩',name:'减脂营养方案',lines:[
+   '总热量 2200-2500 kcal（比维持量少300-500）',
+   '蛋白质 140-175g（每餐必有）/ 碳水 200-250g（训练前后）/ 脂肪 60-80g',
+   '水 2.5-3L（打卡页每天目标10杯，每杯约250ml）',
+   '里程碑：88kg → 85kg(1个月) → 80kg(3个月) → 75kg(6个月)']},
+ {id:'training',icon:'💪',name:'每周训练（二分化）',lines:[
+   '周一 上肢A：胸、肩、三头 45-60min',
+   '周二 下肢A：腿举、腿弯举、臀桥 45-60min',
+   '周三 有氧恢复（椭圆机）+ 核心 30min',
+   '周四 上肢B：背、二头、肩；周五 下肢B：罗马尼亚硬拉、分腿蹲',
+   '周六 有氧恢复（划船机/快走）30min；周日 完全休息']},
+ {id:'books',icon:'📚',name:'书单路线',lines:[
+   '心理：非暴力沟通 → 犯罪心理学（梅传强）→ 思考，快与慢',
+   '计算机：Python编程从入门到实践 → 利用Python进行数据分析 → 算法图解',
+   '目标：能独立完成一个数据分析小项目']},
+ {id:'mindset',icon:'💡',name:'心态与应急方案',lines:[
+   '考研失败 ≠ 人生失败，联考是保底；每天进步1%，一年强大37倍；完成比完美重要',
+   '临时集合/拉练：挤占的学习时间次日优先补数学和英语',
+   '身体不适：降低训练强度，但保持最低学习量',
+   '状态低谷：允许娱乐一晚，第二天必须回到正轨',
+   '进度落后：砍掉次要任务，保住数学 + 英语 + 专业课']}
+];
 
 var FIXED_ROUTINE=[
   {start:'06:00',end:'06:15',content:'起床 + 跑操 1.3km',category:'routine'},
@@ -441,22 +515,22 @@ var DEFAULT_STUDY={
 };
 
 function defaultSubjects(){return [
-  {code:'101',name:'思想政治理论',score:100,stage:'not_started',progress:0,chapter:'',
+  {code:'101',name:'思想政治理论',score:100,target:70,stage:'not_started',progress:0,chapter:'',
     teacher:'徐涛 + 肖秀荣 + 腿姐',materials:'核心考案、肖1000题、肖8、肖4'},
-  {code:'201',name:'英语一',score:100,stage:'foundation',progress:12,chapter:'田静《句句真研》长难句',
-    teacher:'唐迟(阅读) · 田静(长难句) · 石雷鹏(写作)',materials:'句句真研、黄皮书、阅读的逻辑',
+  {code:'201',name:'英语一',score:100,target:65,stage:'foundation',progress:12,chapter:'田静《句句真研》长难句',
+    teacher:'唐迟(阅读) · 田静(长难句) · 石雷鹏(写作) · 唐静(翻译)',materials:'句句真研、黄皮书、阅读的逻辑',
     vocab:4000,targetVocab:5500},
-  {code:'302',name:'数学二',score:150,stage:'foundation',progress:10,chapter:'高数基础（汤家凤）',
-    teacher:'汤家凤(基础) · 武忠祥(强化)',materials:'高数/线代辅导讲义、660题、330题、真题、李林6+4'},
-  {code:'822',name:'刑技专业基础综合（物理+化学）',score:150,stage:'not_started',progress:0,chapter:'',
+  {code:'302',name:'数学二',score:150,target:125,stage:'foundation',progress:10,chapter:'高数基础（汤家凤）',
+    teacher:'汤家凤(基础) · 武忠祥(强化) · 李永乐(线代)',materials:'高数/线代辅导讲义、660题、330题、真题、李林6+4'},
+  {code:'822',name:'刑技专业基础综合（物理+化学）',score:150,target:110,stage:'not_started',progress:0,chapter:'',
     teacher:'宋浩(物理) · B站物化网课',materials:'程守洙《普通物理学》、傅献彩《物理化学》、公大822大纲',
     sub:'物理75分（力学/热学/电磁学/光学/近代物理） · 化学75分（热力学/平衡/电化学/动力学）'}
 ];}
 
 function defaultData(){
   return {
-    version:2,
-    settings:{heightCm:178,weightKg:88.5,targetWeightKg:75,examDate:'2028-12-23',theme:'light',notify:false},
+    version:3,
+    settings:{heightCm:178,weightKg:88.5,targetWeightKg:75,examDate:'2028-12-23',theme:'dark',notify:false},
     courses:JSON.parse(JSON.stringify(DEFAULT_COURSES)),
     studyPlan:JSON.parse(JSON.stringify(DEFAULT_STUDY)),
     tempTasks:[],            // {id,date,start,end,content,category,priority,repeat,createdAt}
@@ -464,10 +538,14 @@ function defaultData(){
     weightHistory:[{date:'2026-09-13',kg:88.5}],
     subjects:defaultSubjects(),
     books:[
-      {id:'b1',title:'非暴力沟通',total:192,read:0,current:true},
-      {id:'b2',title:'犯罪心理学',total:300,read:0,current:false},
-      {id:'b3',title:'当下的力量',total:240,read:0,current:false}
+      {id:'b1',title:'非暴力沟通',cat:'心理',total:192,read:0,current:true},
+      {id:'b2',title:'犯罪心理学',cat:'心理',total:300,read:0,current:false},
+      {id:'b3',title:'思考，快与慢',cat:'心理',total:432,read:0,current:false},
+      {id:'b4',title:'Python编程：从入门到实践',cat:'计算机',total:459,read:0,current:false},
+      {id:'b5',title:'利用Python进行数据分析',cat:'计算机',total:434,read:0,current:false},
+      {id:'b6',title:'算法图解',cat:'计算机',total:196,read:0,current:false}
     ],
+    favResources:[],         // 资料库收藏项 key
     overrides:{},            // "date|itemKey" -> 'cancelled'
     moves:{}                 // "date|itemKey" -> {start,end}
   };
@@ -511,6 +589,20 @@ function load(){
         if(d.version<2){
           if(d.settings&&d.settings.examDate==='2027-12-26')d.settings.examDate='2028-12-23';
           d.version=2;save();
+        }
+        if(d.version<3){
+          // v3：深色优先、科目目标分、资料库收藏、书单按全栈计划书升级
+          if(d.settings&&d.settings.theme==='light')d.settings.theme='dark';
+          if(!Array.isArray(d.favResources))d.favResources=[];
+          var tg={'101':70,'201':65,'302':125,'822':110};
+          (d.subjects||[]).forEach(function(s){if(s.target==null)s.target=tg[s.code];});
+          if(Array.isArray(d.books)){
+            d.books=d.books.filter(function(b){return b.title!=='当下的力量';});
+            defaultData().books.forEach(function(def){
+              if(!d.books.some(function(b){return b.title===def.title;}))d.books.push(def);
+            });
+          }
+          d.version=3;save();
         }
         D=d;return;
       }
@@ -642,7 +734,7 @@ function renderHeader(){
   var d=state.selected,today=new Date();
   var diff=daysBetween(dkey(today),D.settings.examDate);
   var html='<div class="header-row">'+
-    '<div><div class="header-title">警校考研计划助手</div>'+
+    '<div><div class="header-title">警校考研全栈助手</div>'+
     '<div class="header-sub">'+esc(D.settings.examDate)+' 初试 · 中国人民公安大学</div></div>'+
     '<div class="date-nav">'+
       '<button class="icon-btn" id="hPrev">‹</button>'+
@@ -800,8 +892,8 @@ function renderWeek(){
 }
 
 /* ==================== 打卡视图 ==================== */
-var FITNESS_TYPES=['上肢','下肢','跑步','休息'];
-var GOALS={words:50,mathMin:90,engMin:45,majorMin:60,readPages:15};
+var FITNESS_TYPES=['上肢','下肢','有氧','休息'];
+var GOALS={words:50,mathMin:90,engMin:45,majorMin:60,readPages:15,waterCups:10};
 function dayCompletion(date){
   var ci=D.checkins[dkey(date)]||{tasks:{}};
   var metrics=[
@@ -810,7 +902,8 @@ function dayCompletion(date){
     (ci.engMin||0)>=GOALS.engMin,
     (ci.majorMin||0)>=GOALS.majorMin,
     !!ci.fitType,
-    (ci.readPages||0)>0
+    (ci.readPages||0)>0,
+    (ci.waterCups||0)>=GOALS.waterCups
   ];
   var mScore=metrics.filter(Boolean).length/metrics.length;
   var tasks=buildDay(date).filter(function(it){return it.source!=='routine'&&!it._cancelled&&!it._movedOut;});
@@ -854,6 +947,7 @@ function renderCheckin(){
   html+=metricCard('📐','#e8e5ff','#4B3FE3','考研数学','汤家凤基础 + 习题','mathMin',90,'分钟');
   html+=metricCard('🔡','#e0f5f1','#0d7a6e','考研英语','真题 / 长难句 / 阅读','engMin',45,'分钟');
   html+=metricCard('📚','#e8e5ff','#4B3FE3','考研专业课','物理 / 化学 / 刑技','majorMin',60,'分钟');
+  html+=metricCard('💧','#e0f2fe','#0369a1','喝水','每日 2.5-3L · 每杯约250ml','waterCups',10,'杯');
 
   // 健身
   html+='<div class="card"><div class="check-card"><div class="check-icon" style="background:#e3f6e3;color:#1a8a1a">💪</div>'+
@@ -866,7 +960,7 @@ function renderCheckin(){
   // 读书
   var bookOpts='<option value="">选择书目</option>'+D.books.map(function(b){
     return '<option value="'+b.id+'"'+(ci.readBook===b.id?' selected':'')+'>'+esc(b.title)+'</option>';}).join('');
-  html+='<div class="card"><div class="check-card"><div class="check-icon" style="background:#fff6dd;color:#b8860b">📖</div>'+
+  html+='<div class="card"><div class="check-card"><div class="check-icon" style="background:#fce7f3;color:#db2777">📖</div>'+
     '<div class="check-main"><div class="check-name">读书打卡</div>'+
     '<div class="check-sub" id="readSub">今日已读 '+(ci.readPages||0)+' 页 · 目标 15 页</div></div></div>'+
     '<div style="display:flex;gap:8px;margin-top:9px"><select id="readBook" style="flex:1">'+bookOpts+'</select>'+
@@ -893,7 +987,7 @@ function renderCheckin(){
   html+='</div>';
   $('#view-checkin').innerHTML=html;
 
-  var MGOALS={words:50,mathMin:90,engMin:45,majorMin:60};
+  var MGOALS={words:50,mathMin:90,engMin:45,majorMin:60,waterCups:10};
   $all('[data-mk]').forEach(function(inp){
     inp.addEventListener('input',function(){
       var k=inp.getAttribute('data-mk');
@@ -944,7 +1038,7 @@ function renderProgress(){
     var stageOpts=STAGES.map(function(st){return '<option value="'+st[0]+'"'+(s.stage===st[0]?' selected':'')+'>'+st[1]+'</option>';}).join('');
     html+='<div style="padding:10px 0;border-bottom:1px solid var(--border)">'+
       '<div class="subj-head"><span class="subj-badge">'+s.code+'</span><b style="font-size:14px">'+esc(s.name)+'</b>'+
-      '<span class="muted" style="margin-left:auto">'+s.score+'分</span></div>'+
+      '<span class="muted" style="margin-left:auto">满分'+s.score+' · 目标<b style="color:var(--success)">'+(s.target||'—')+'</b></span></div>'+
       '<select class="stage-select" data-si="'+idx+'" data-sk="stage">'+stageOpts+'</select>'+
       '<div class="row-between" style="margin-top:8px"><span class="muted" style="font-size:12px">完成度 <b id="spv'+idx+'" style="color:var(--accent)">'+s.progress+'%</b></span>'+
       '<input type="range" min="0" max="100" value="'+s.progress+'" data-si="'+idx+'" data-sk="progress" style="flex:1;margin-left:12px"></div>'+
@@ -963,11 +1057,17 @@ function renderProgress(){
   var hist=D.weightHistory;
   var latest=hist.length?hist[hist.length-1].kg:D.settings.weightKg;
   var diff=(latest-D.settings.targetWeightKg).toFixed(1);
+  var hM=D.settings.heightCm/100;
+  var bmi=hM?latest/(hM*hM):0;
+  var bmiLv=bmi<18.5?'偏瘦':bmi<24?'正常':bmi<28?'超重':'肥胖';
+  var bmiColor=bmi<24?'var(--success)':bmi<28?'var(--warning)':'var(--danger)';
+  var bmiTarget=D.settings.targetWeightKg/(hM*hM);
   html+='<div class="card"><div class="card-title">⚖️ 体重曲线 <span class="more">目标 '+D.settings.targetWeightKg+'kg</span></div>'+
     '<div class="stat-grid" style="margin-bottom:10px">'+
     '<div class="stat-cell"><b>'+latest+'</b><span>当前 kg</span></div>'+
     '<div class="stat-cell"><b style="color:'+(diff<=0?'var(--success)':'var(--warning)')+'">'+(diff>0?'+':'')+diff+'</b><span>距目标 kg</span></div>'+
-    '<div class="stat-cell"><b>'+(hist.length)+'</b><span>记录次数</span></div></div>'+
+    '<div class="stat-cell"><b style="color:'+bmiColor+'">'+bmi.toFixed(1)+'</b><span>BMI · '+bmiLv+'</span></div>'+
+    '<div class="stat-cell"><b>'+bmiTarget.toFixed(1)+'</b><span>达标 BMI</span></div></div>'+
     '<div class="chart-box"><canvas id="weightChart"></canvas></div></div>';
 
   // 读书
@@ -976,12 +1076,15 @@ function renderProgress(){
     var totalPages=bookReadPages(b);
     var pct=Math.min(100,Math.round(totalPages/b.total*100));
     html+='<div class="book-row"><div class="book-cover">📕</div><div style="flex:1;min-width:0">'+
-      '<div style="font-size:14px;font-weight:600">'+esc(b.title)+(b.current?' <span class="chip" style="background:#fff6dd;color:#b8860b">在读</span>':'')+'</div>'+
+      '<div style="font-size:14px;font-weight:600">'+esc(b.title)+(b.cat?' <span class="chip" style="background:#fce7f3;color:#db2777">'+esc(b.cat)+'</span>':'')+(b.current?' <span class="chip" style="background:#e8e5ff;color:#4B3FE3">在读</span>':'')+'</div>'+
       '<div class="muted" style="font-size:12px">'+totalPages+' / '+b.total+' 页 · '+pct+'%</div>'+
       '<div class="progress green"><i style="width:'+pct+'%"></i></div></div>'+
       '<button class="book-edit" data-book="'+b.id+'">编辑</button></div>';
   });
   html+='</div>';
+
+  // 资料库
+  html+=renderLibrary();
 
   // 周统计饼图
   var stat=weekCategoryMinutes(state.selected);
@@ -1003,6 +1106,17 @@ function renderProgress(){
   });
   $all('[data-book]').forEach(function(b){b.onclick=function(){editBook(b.getAttribute('data-book'));};});
   $('#addBook').onclick=function(){editBook(null);};
+  $all('[data-lib]').forEach(function(el){
+    el.onclick=function(){state.libOpen=(state.libOpen===el.getAttribute('data-lib'))?null:el.getAttribute('data-lib');renderProgress();};
+  });
+  $all('[data-fav]').forEach(function(el){
+    el.onclick=function(e){
+      e.stopPropagation();
+      var id=el.getAttribute('data-fav'),i=D.favResources.indexOf(id);
+      if(i>-1)D.favResources.splice(i,1);else D.favResources.push(id);
+      save();renderProgress();
+    };
+  });
 
   drawWeightChart();
   drawPie(stat);
@@ -1015,6 +1129,31 @@ function bookReadPages(b){
     if(c.readBook===b.id)total+=(c.readPages||0);
   });
   return total;
+}
+
+function renderLibrary(){
+  var favs=D.favResources||[];
+  var h='<div class="card"><div class="card-title">📚 资料库 <span class="more">点 ☆ 收藏</span></div>';
+  if(favs.length){
+    h+='<div class="lib-favbar"><b style="font-size:12px;color:var(--warning)">⭐ 我的收藏：</b>'+
+      favs.map(function(id){
+        var g=RESOURCE_GROUPS.filter(function(x){return x.id===id;})[0];
+        return g?'<span class="lib-favchip" data-lib="'+g.id+'">'+g.icon+' '+esc(g.name.split(' · ')[0])+'</span>':'';
+      }).join('')+'</div>';
+  }
+  RESOURCE_GROUPS.forEach(function(g){
+    var on=favs.indexOf(g.id)>-1,open=state.libOpen===g.id;
+    h+='<div class="res-item'+(open?' open':'')+'">'+
+      '<div class="res-head" data-lib="'+g.id+'">'+
+        '<span class="res-ic">'+g.icon+'</span><span class="res-nm">'+esc(g.name)+'</span>'+
+        '<button class="res-star" data-fav="'+g.id+'">'+(on?'⭐':'☆')+'</button>'+
+        '<span class="res-arrow">'+(open?'▴':'▾')+'</span></div>';
+    if(open){
+      h+='<ul class="res-lines">'+g.lines.map(function(l){return '<li>'+esc(l)+'</li>';}).join('')+'</ul>';
+    }
+    h+='</div>';
+  });
+  return h+'</div>';
 }
 
 function weekCategoryMinutes(anchor){
@@ -1056,7 +1195,7 @@ function drawPie(agg){
   var cv=$('#pieChart');if(!cv)return;
   var entries=[['kaoyan','考研(数+专)',agg.kaoyan],['english','英语',agg.english],['fitness','健身',agg.fitness],['reading','读书',agg.reading],['liankao','联考',agg.liankao]]
     .filter(function(e){return e[2]>0;});
-  var colors={kaoyan:'#4B3FE3',english:'#0d7a6e',fitness:'#1a8a1a',reading:'#b8860b',liankao:'#e8740c'};
+  var colors={kaoyan:'#4B3FE3',english:'#0d7a6e',fitness:'#1a8a1a',reading:'#db2777',liankao:'#e8740c'};
   var total=entries.reduce(function(s,e){return s+e[2];},0);
   $('#pieLegend').innerHTML=entries.length?entries.map(function(e){
     return '<span><i style="background:'+colors[e[0]]+'"></i>'+e[1]+' · '+(e[2]/60).toFixed(1)+' 小时 · '+Math.round(e[2]/total*100)+'%</span>';}).join('')
@@ -1357,9 +1496,9 @@ $('#bkDelete').onclick=async function(){
 function applyTheme(){
   document.documentElement.dataset.theme=D.settings.theme;
   var meta=document.querySelector('meta[name=theme-color]');
-  if(meta)meta.setAttribute('content',D.settings.theme==='dark'?'#131324':'#0f3460');
+  if(meta)meta.setAttribute('content',D.settings.theme==='dark'?'#6366f1':'#0f3460');
 }
-var APP_VERSION='2026.09.17-v2';
+var APP_VERSION='2026.09.18-v3';
 var deferredInstall=null;
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();deferredInstall=e;
@@ -1434,7 +1573,7 @@ function switchTab(tab){
   state.tab=tab;
   $all('.view').forEach(function(v){v.classList.toggle('active',v.id==='view-'+tab);});
   $all('.tab-btn').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===tab);});
-  $('#fab').style.display=tab==='settings'?'none':'flex';
+  $('#fab').style.display=(tab==='today'||tab==='week')?'flex':'none';
   if(tab==='today')renderToday();
   if(tab==='week')renderWeek();
   if(tab==='checkin')renderCheckin();
