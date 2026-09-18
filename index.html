@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>警校考研全栈助手</title>
-<!-- APP_VERSION: 2026.09.18-v3 -->
+<!-- APP_VERSION: 2026.09.18-v3.1 -->
 <meta name="description" content="警校学生考研+联考+健身+读书全栈管理：计划、打卡、冲突检测、进度追踪">
 <meta name="theme-color" content="#6366f1">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -102,6 +102,8 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
 .tl-item.done .tl-check{background:var(--success);border-color:var(--success);color:#fff;animation:pop .3s ease}
 @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 .tl-del{position:absolute;right:9px;bottom:7px;font-size:11px;color:var(--faint);padding:3px 6px;border-radius:6px}
+.tl-move{position:absolute;right:9px;bottom:7px;font-size:11.5px;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:14px;font-weight:600}
+.tl-move.shiftright{right:58px}
 .tl-del:active{background:var(--tap)}
 .tl-item.iscurrent .tl-card{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
 .now-line{position:relative;height:0;margin:2px 0 14px -6px}
@@ -315,6 +317,17 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
   </div>
 </div>
 
+<!-- 调整安排弹窗 -->
+<div class="mask" id="moveMask">
+  <div class="sheet" style="max-height:70dvh">
+    <div class="sheet-handle"></div>
+    <h3 id="mvTitle">⇄ 调整安排</h3>
+    <div class="muted" id="mvInfo" style="margin-bottom:8px;font-size:13px"></div>
+    <div id="mvBody"></div>
+    <div class="sheet-actions"><button class="btn btn-outline" data-close>关闭</button></div>
+  </div>
+</div>
+
 <!-- 通用确认弹窗 -->
 <div class="mask" id="confirmMask">
   <div class="sheet" style="max-height:60dvh">
@@ -361,6 +374,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
 var STORE_KEY='police_kaoyan_v1';
 var DAY_KEYS=['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 var DAY_NAMES=['周一','周二','周三','周四','周五','周六','周日'];
+var PLAN_START='2026-09-21'; // 正式学习计划开始日（下周一），之前的日期只显示作息与课程
 var WEEK_SLOTS=['06:00','08:30','10:20','12:00','14:00','15:40','17:20','18:45','20:15','22:00'];
 var CAT={
   routine:{label:'作息',color:'#9aa0b4',bg:'#ececf2'},
@@ -632,7 +646,7 @@ function buildDay(date){
   (D.courses[DAY_KEYS[wd]]||[]).forEach(function(c,i){
     items.push({key:'c'+i,start:c.start,end:c.end,content:c.name,category:'course',source:'course'});
   });
-  (D.studyPlan[DAY_KEYS[wd]]||[]).forEach(function(s,i){
+  if(dk>=PLAN_START)(D.studyPlan[DAY_KEYS[wd]]||[]).forEach(function(s,i){
     items.push({key:'s'+i,start:s.start,end:s.end,content:s.subject?s.content+'（'+s.subject+'）':s.content,
       category:s.category||'other',source:'study',subject:s.subject});
   });
@@ -657,45 +671,46 @@ function buildDay(date){
   return out;
 }
 
+/* 计算空闲段（传入忙碌区间列表，限定 06:00-22:00） */
+function computeGaps(busyList){
+  var busy=[{start:'06:00',end:'06:00'},{start:'22:00',end:'22:00'}].concat(busyList);
+  busy.sort(function(a,b){return tmin(a.start)-tmin(b.start);});
+  var merged=[],gaps=[];
+  busy.forEach(function(b){
+    if(!merged.length||tmin(b.start)>tmin(merged[merged.length-1].end))merged.push({start:b.start,end:b.end});
+    else{var m=merged[merged.length-1];if(tmin(b.end)>tmin(m.end))m.end=b.end;}
+  });
+  for(var i=0;i<merged.length-1;i++){
+    if(tmin(merged[i+1].start)-tmin(merged[i].end)>=10)
+      gaps.push({start:merged[i].end,end:merged[i+1].start});
+  }
+  return gaps;
+}
+/* 在未来3天中找真正空闲的时段（优先 18:30 后的晚间） */
+function findFutureSlot(fromDate,need){
+  for(var off=1;off<=3;off++){
+    var d=addDays(fromDate,off);
+    var gaps=computeGaps(buildDay(d).filter(function(it){return !it._cancelled&&!it._movedOut;})
+      .map(function(it){return {start:it.start,end:it.end};}));
+    var cand=gaps.filter(function(g){return tmin(g.start)>=18*60+30&&durMin(g)>=need;})[0]
+      ||gaps.filter(function(g){return durMin(g)>=need;})[0];
+    if(cand){
+      var em=tmin(cand.start)+need,es=pad(Math.floor(em/60))+':'+pad(em%60);
+      return {date:d,start:cand.start,end:es};
+    }
+  }
+  return null;
+}
+
 /* 冲突检测：返回冲突数组 + 建议 */
 function detectConflicts(date,task){
   var items=buildDay(date).filter(function(it){return !it._cancelled&&!it._movedOut;});
   var conflicts=items.filter(function(it){return overlap(task,it);});
-  // 计算空闲段（传入忙碌区间列表，限定 06:00-22:00）
-  function computeGaps(busyList){
-    var busy=[{start:'06:00',end:'06:00'},{start:'22:00',end:'22:00'}].concat(busyList);
-    busy.sort(function(a,b){return tmin(a.start)-tmin(b.start);});
-    var merged=[],gaps=[];
-    busy.forEach(function(b){
-      if(!merged.length||tmin(b.start)>tmin(merged[merged.length-1].end))merged.push({start:b.start,end:b.end});
-      else{var m=merged[merged.length-1];if(tmin(b.end)>tmin(m.end))m.end=b.end;}
-    });
-    for(var i=0;i<merged.length-1;i++){
-      if(tmin(merged[i+1].start)-tmin(merged[i].end)>=10)
-        gaps.push({start:merged[i].end,end:merged[i+1].start});
-    }
-    return gaps;
-  }
   function freeGaps(ignoreKey){
     var busy=[];
     items.forEach(function(it){if(it.key!==ignoreKey)busy.push({start:it.start,end:it.end});});
     busy.push({start:task.start,end:task.end});
     return computeGaps(busy);
-  }
-  // 在未来 N 天中找真正空闲的时段（优先 18:30 后的晚间）
-  function findFutureSlot(fromDate,need){
-    for(var off=1;off<=3;off++){
-      var d=addDays(fromDate,off);
-      var gaps=computeGaps(buildDay(d).filter(function(it){return !it._cancelled&&!it._movedOut;})
-        .map(function(it){return {start:it.start,end:it.end};}));
-      var cand=gaps.filter(function(g){return tmin(g.start)>=18*60+30&&durMin(g)>=need;})[0]
-        ||gaps.filter(function(g){return durMin(g)>=need;})[0];
-      if(cand){
-        var em=tmin(cand.start)+need,es=pad(Math.floor(em/60))+':'+pad(em%60);
-        return {date:d,start:cand.start,end:es};
-      }
-    }
-    return null;
   }
   conflicts.forEach(function(c){
     c.movable=(c.source==='study'||c.source==='temp');
@@ -769,7 +784,9 @@ function renderToday(){
     '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:var(--accent)">'+comp.pct+'%</div><div class="muted">今日完成度</div></div>'+
     '</div></div>';
 
-  html+='<div class="card"><div class="card-title">⏱ 时间轴 <span class="more">点圆圈打卡</span></div><div class="timeline">';
+  if(dkey(date)<PLAN_START)html+='<div class="section-hint">📌 正式学习计划自 9月21日（周一）开始，当前仅显示作息与课程；也可点右下角 + 先添加临时安排</div>';
+
+  html+='<div class="card"><div class="card-title">⏱ 时间轴 <span class="more">点圆圈打卡 · ⇄ 可调整</span></div><div class="timeline">';
   var nowDrawn=false;
   items.forEach(function(it){
     if(isToday&&!nowDrawn&&tmin(it.start)>nowMin){
@@ -792,7 +809,8 @@ function renderToday(){
         '<div class="tl-meta"><span>时长 '+fmtDur(durMin(it))+'</span>'+
           (it.source==='temp'?'<span style="color:var(--warning)">临时安排</span>':'')+'</div>'+
         (it.source!=='routine'&&!dimmed?'<button class="tl-check" data-key="'+esc(it.key)+'">✓</button>':'')+
-        (it.source==='temp'?'<button class="tl-del" data-del="'+esc(it.tempId)+'">删除</button>':'')+
+        ((it.source==='study'||it.source==='temp')?'<button class="tl-move'+(it.source==='temp'?' shiftright':'')+'" data-move="'+esc(it.key)+'">⇄ '+(dimmed?'恢复':'调整')+'</button>':'')+
+        (it.source==='temp'&&!dimmed?'<button class="tl-del" data-del="'+esc(it.tempId)+'">删除</button>':'')+
       '</div></div>';
   });
   if(isToday&&!nowDrawn&&nowMin<22*60)html+='<div class="now-line"><span>现在 '+pad(today.getHours())+':'+pad(today.getMinutes())+'</span></div>';
@@ -815,6 +833,13 @@ function renderToday(){
       if(await confirmDlg('删除临时安排','「'+(t?t.content:'')+'」将被删除，相关的冲突调整保留。')){
         D.tempTasks=D.tempTasks.filter(function(x){return x.id!==id;});save();renderAll();toast('已删除');
       }
+    };
+  });
+  $all('.tl-move',$('#view-today')).forEach(function(b){
+    b.onclick=function(){
+      var k=b.getAttribute('data-move');
+      var it=items.filter(function(x){return x.key===k;})[0];
+      if(it)openMoveSheet(date,it);
     };
   });
 }
@@ -1368,6 +1393,63 @@ function importData(e){
 
 /* ==================== 临时安排流程 ==================== */
 var pendingTask=null;
+/* ==================== 调整安排（改期 / 取消） ==================== */
+function openMoveSheet(date,it){
+  var dk=dkey(date),ok=dk+'|'+it.key,need=durMin(it);
+  var ov=D.overrides[ok],mv=D.moves[ok];
+  $('#mvTitle').textContent='⇄ 调整：'+it.content;
+  $('#mvInfo').textContent=(date.getMonth()+1)+'月'+date.getDate()+'日 · 当前 '+it.start+' - '+it.end+' · 时长 '+fmtDur(need);
+  var html='',slots=[];
+  if(mv)html+='<button class="btn btn-outline mv-act" data-act="restore" style="width:100%;margin-bottom:8px">↩️ 撤销本次调整（恢复原时间）</button>';
+  if(ov==='cancelled')html+='<button class="btn btn-outline mv-act" data-act="restore" style="width:100%;margin-bottom:8px">↩️ 本次已取消，点此恢复</button>';
+  if(ov==='moved_out')html+='<button class="btn btn-outline mv-act" data-act="restore" style="width:100%;margin-bottom:8px">↩️ 本次已顺延，点此恢复（顺延产生的新安排需单独删除）</button>';
+  var gaps=computeGaps(buildDay(date).filter(function(x){return !x._cancelled&&!x._movedOut&&x.key!==it.key;})
+    .map(function(x){return {start:x.start,end:x.end};})).filter(function(g){return durMin(g)>=need;});
+  if(gaps.length){
+    html+='<div class="muted" style="font-size:12px;margin:4px 0 6px">改到今天空闲时段：</div>';
+    gaps.slice(0,6).forEach(function(g){
+      var em=tmin(g.start)+need,es=pad(Math.floor(em/60))+':'+pad(em%60);
+      slots.push(g.start);
+      html+='<button class="btn btn-outline mv-slot" data-i="'+(slots.length-1)+'" style="width:100%;margin-bottom:6px">🕐 '+g.start+' - '+es+'</button>';
+    });
+  }
+  html+='<div class="muted" style="font-size:12px;margin:8px 0 6px">或：</div>';
+  var fut=findFutureSlot(date,need);
+  if(fut)html+='<button class="btn btn-outline mv-act" data-act="future" style="width:100%;margin-bottom:6px">📅 顺延到 '+(fut.date.getMonth()+1)+'月'+fut.date.getDate()+'日（'+DAY_NAMES[mon0(fut.date)]+'）'+fut.start+' - '+fut.end+'</button>';
+  html+='<button class="btn btn-danger mv-act" data-act="cancel" style="width:100%">❌ 取消本次（有事不进行）</button>';
+  $('#mvBody').innerHTML=html;
+  $('#moveMask').classList.add('show');
+  $all('.mv-slot',$('#mvBody')).forEach(function(b){
+    b.onclick=function(){
+      var st=slots[+b.getAttribute('data-i')];
+      var em=tmin(st)+need,es=pad(Math.floor(em/60))+':'+pad(em%60);
+      D.moves[ok]={start:st,end:es};delete D.overrides[ok];save();
+      $('#moveMask').classList.remove('show');renderAll();
+      toast('已调整到 '+st+' - '+es);
+    };
+  });
+  $all('.mv-act',$('#mvBody')).forEach(function(b){
+    b.onclick=function(){
+      var act=b.getAttribute('data-act');
+      if(act==='restore'){
+        delete D.moves[ok];delete D.overrides[ok];save();
+        $('#moveMask').classList.remove('show');renderAll();toast('已恢复原时间');
+      }else if(act==='future'){
+        var f=findFutureSlot(date,need);
+        if(!f){toast('未来3天没有空闲时段，请手动安排');return;}
+        D.tempTasks.push({id:uid(),date:dkey(f.date),start:f.start,end:f.end,
+          content:it.content+'（顺延）',category:it.category,priority:'中',repeat:'none',createdAt:Date.now()});
+        D.overrides[ok]='moved_out';delete D.moves[ok];save();
+        $('#moveMask').classList.remove('show');renderAll();
+        toast('已顺延到 '+(f.date.getMonth()+1)+'月'+f.date.getDate()+'日 '+f.start);
+      }else if(act==='cancel'){
+        D.overrides[ok]='cancelled';delete D.moves[ok];save();
+        $('#moveMask').classList.remove('show');renderAll();toast('已取消本次安排');
+      }
+    };
+  });
+}
+
 function openTaskSheet(){
   $('#fDate').value=dkey(state.selected);
   $('#fStart').value='19:00';$('#fEnd').value='20:00';
@@ -1498,7 +1580,7 @@ function applyTheme(){
   var meta=document.querySelector('meta[name=theme-color]');
   if(meta)meta.setAttribute('content',D.settings.theme==='dark'?'#6366f1':'#0f3460');
 }
-var APP_VERSION='2026.09.18-v3';
+var APP_VERSION='2026.09.18-v3.1';
 var deferredInstall=null;
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();deferredInstall=e;
@@ -1600,7 +1682,7 @@ load();
 applyTheme();
 setupPWA();
 renderHeader();
-renderToday();
+switchTab('today');
 setInterval(function(){
   if(state.tab==='today')renderToday();
   reminderTick();
