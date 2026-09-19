@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>警校考研全栈助手</title>
-<!-- APP_VERSION: 2026.09.19-v3.3 -->
+<!-- APP_VERSION: 2026.09.19-v3.4 -->
 <meta name="description" content="警校学生考研+联考+健身+读书全栈管理：计划、打卡、冲突检测、进度追踪">
 <meta name="theme-color" content="#6366f1">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -239,21 +239,6 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
 #updBanner{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);z-index:95;background:linear-gradient(135deg,#312e81,#6366f1);color:#fff;padding:10px 14px;border-radius:14px;font-size:13px;box-shadow:0 6px 20px rgba(99,102,241,.5);display:flex;align-items:center;gap:10px;max-width:92%;animation:upIn .25s ease}
 #updBanner button{background:#fff;color:#4f46e5;border:0;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;white-space:nowrap}
 @keyframes upIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
-/* PIN 应用锁 */
-#pinMask{position:fixed;inset:0;z-index:200;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding-bottom:8dvh}
-#pinMask.show{display:flex}
-.pin-icon{font-size:34px;margin-bottom:10px}
-.pin-title{font-size:15px;color:var(--muted);margin-bottom:16px}
-.pin-dots{display:flex;gap:16px;margin-bottom:8px}
-.pin-dots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);transition:all .15s}
-.pin-dots span.on{background:var(--accent);border-color:var(--accent);transform:scale(1.15)}
-.pin-dots.shake{animation:pinShake .45s}
-@keyframes pinShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-.pin-msg{min-height:18px;font-size:12px;color:var(--danger);margin-bottom:10px}
-.pin-pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
-.pin-pad button{width:72px;height:58px;border-radius:16px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:22px;font-weight:600}
-.pin-pad button:active{background:var(--accent-soft)}
-.pin-cancel{margin-top:18px;background:none;border:none;color:var(--muted);font-size:14px}
 /* 资料库 */
 .lib-favbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
 .lib-favchip{background:var(--accent-soft);color:var(--accent);font-size:12px;padding:4px 10px;border-radius:20px;white-space:nowrap}
@@ -354,21 +339,6 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
     <div id="mvBody"></div>
     <div class="sheet-actions"><button class="btn btn-outline" data-close>关闭</button></div>
   </div>
-</div>
-
-<!-- PIN 应用锁 -->
-<div id="pinMask">
-  <div class="pin-icon">🔐</div>
-  <div class="pin-title" id="pinTitle">输入 PIN 解锁</div>
-  <div class="pin-dots" id="pinDots"><span></span><span></span><span></span><span></span></div>
-  <div class="pin-msg" id="pinMsg"></div>
-  <div class="pin-pad">
-    <button data-pk="1">1</button><button data-pk="2">2</button><button data-pk="3">3</button>
-    <button data-pk="4">4</button><button data-pk="5">5</button><button data-pk="6">6</button>
-    <button data-pk="7">7</button><button data-pk="8">8</button><button data-pk="9">9</button>
-    <button data-pk="del" style="font-size:18px">⌫</button><button data-pk="0">0</button><button data-pk="del" style="opacity:0;pointer-events:none">⌫</button>
-  </div>
-  <button class="pin-cancel" id="pinCancel" style="display:none">取消</button>
 </div>
 
 <!-- 通用确认弹窗 -->
@@ -1333,12 +1303,6 @@ function renderSettings(){
     '<div class="set-row"><div><div class="lbl">深色模式</div><div class="sub">暗色背景，夜间使用更护眼</div></div>'+
     '<div class="switch '+(s.theme==='dark'?'on':'')+'" id="swTheme"><i></i></div></div></div>';
 
-  html+='<div class="card"><div class="card-title">🔐 应用锁</div>'+
-    '<div class="set-row"><div><div class="lbl">PIN 码锁</div>'+
-    '<div class="sub">'+(s.pin?'已开启 · 打开应用需输入 PIN 码':'关闭 · 开启后打开应用需输入 4 位 PIN')+'</div></div>'+
-    '<div class="switch '+(s.pin?'on':'')+'" id="swPin"><i></i></div></div>'+
-    (s.pin?'<button class="btn btn-outline" id="btnPinMod" style="margin-top:9px">修改 PIN</button>':'')+'</div>';
-
   html+='<div class="card"><div class="card-title">📚 课表编辑</div>'+
     '<div class="day-tabs">'+DAY_NAMES.map(function(n,i){
       return '<button data-cday="'+i+'" class="'+(i===settingsCourseDay?'on':'')+'">'+n+'</button>';}).join('')+'</div>'+
@@ -1368,11 +1332,6 @@ function renderSettings(){
   $('#setTarget').onchange=function(){s.targetWeightKg=+this.value;save();renderProgress();renderHeader();};
   $('#setExam').onchange=function(){s.examDate=this.value;save();renderHeader();};
   $('#swTheme').onclick=function(){s.theme=s.theme==='dark'?'light':'dark';applyTheme();save();renderSettings();if(state.tab==='progress')renderProgress();};
-  $('#swPin').onclick=function(){
-    if(s.pin){s.pin=null;save();renderSettings();toast('应用锁已关闭');}
-    else openPin('set1');
-  };
-  var bpm=$('#btnPinMod');if(bpm)bpm.onclick=function(){openPin('set1');};
   $('#swNotify').onclick=async function(){
     if(!s.notify){
       if(!('Notification' in window)){toast('当前浏览器不支持通知');return;}
@@ -1447,53 +1406,6 @@ function importData(e){
 
 /* ==================== 临时安排流程 ==================== */
 var pendingTask=null;
-/* ==================== PIN 应用锁 ==================== */
-var pinBuf='',pinFirst='',pinMode='unlock';
-function openPin(mode){
-  pinMode=mode;pinBuf='';
-  $('#pinTitle').textContent=mode==='unlock'?'输入 PIN 解锁':(mode==='set1'?'设置应用锁：请输入 4 位数字':'请再次输入确认');
-  $('#pinMsg').textContent='';
-  $('#pinCancel').style.display=mode==='unlock'?'none':'block';
-  pinRender();
-  $('#pinMask').classList.add('show');
-}
-function pinRender(){
-  $all('#pinDots span').forEach(function(d,i){d.classList.toggle('on',i<pinBuf.length);});
-}
-function pinFail(msg){
-  $('#pinMsg').textContent=msg;
-  var box=$('#pinDots');box.classList.add('shake');
-  setTimeout(function(){box.classList.remove('shake');pinBuf='';pinRender();},450);
-}
-function pinDone(){
-  var s=D.settings;
-  if(pinMode==='unlock'){
-    if(pinBuf===s.pin)$('#pinMask').classList.remove('show');
-    else pinFail('PIN 不正确，请重试');
-  }else if(pinMode==='set1'){
-    pinFirst=pinBuf;openPin('set2');
-  }else{
-    if(pinBuf===pinFirst){
-      s.pin=pinFirst;save();
-      $('#pinMask').classList.remove('show');
-      toast('应用锁已开启');renderSettings();
-    }else pinFail('两次输入不一致，请重新设置');
-  }
-}
-$all('.pin-pad button').forEach(function(b){
-  b.onclick=function(){
-    var k=b.getAttribute('data-pk');
-    if(k==='del'){pinBuf=pinBuf.slice(0,-1);pinRender();return;}
-    if(pinBuf.length>=4)return;
-    pinBuf+=k;pinRender();
-    if(pinBuf.length===4)setTimeout(pinDone,120);
-  };
-});
-$('#pinCancel').onclick=function(){
-  if(pinMode==='unlock')return;
-  $('#pinMask').classList.remove('show');
-};
-
 /* ==================== 调整安排（改期 / 取消） ==================== */
 function openMoveSheet(date,it){
   var dk=dkey(date),ok=dk+'|'+it.key,need=durMin(it);
@@ -1681,7 +1593,7 @@ function applyTheme(){
   var meta=document.querySelector('meta[name=theme-color]');
   if(meta)meta.setAttribute('content',D.settings.theme==='dark'?'#6366f1':'#0f3460');
 }
-var APP_VERSION='2026.09.19-v3.3';
+var APP_VERSION='2026.09.19-v3.4';
 var deferredInstall=null;
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();deferredInstall=e;
@@ -1781,7 +1693,6 @@ $('#fab').onclick=openTaskSheet;
 /* ==================== 启动 ==================== */
 load();
 applyTheme();
-if(D.settings.pin)openPin('unlock');
 setupPWA();
 renderHeader();
 switchTab('today');
