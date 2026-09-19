@@ -1,5 +1,5 @@
 /* 警校考研全栈助手 Service Worker —— 离线缓存 + PWA 可安装 + 自动更新 */
-var CACHE='kaoyan-v6';
+var CACHE='kaoyan-v7';
 var SHELL=[
   './',
   './index.html',
