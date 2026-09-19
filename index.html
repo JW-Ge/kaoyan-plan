@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>警校考研全栈助手</title>
-<!-- APP_VERSION: 2026.09.18-v3.2 -->
+<!-- APP_VERSION: 2026.09.19-v3.3 -->
 <meta name="description" content="警校学生考研+联考+健身+读书全栈管理：计划、打卡、冲突检测、进度追踪">
 <meta name="theme-color" content="#6366f1">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -67,6 +67,19 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px;font-wei
 .cd-box{flex:1;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;text-align:center;backdrop-filter:blur(4px)}
 .cd-num{font-size:20px;font-weight:800;line-height:1.1}
 .cd-label{font-size:11px;opacity:.85;margin-top:2px}
+/* 头部滚动收缩（任务栏模式） */
+.app-header{transition:padding .25s ease,border-radius .25s ease}
+.header-title{transition:font-size .2s ease}
+.header-sub{max-height:20px;transition:max-height .25s ease,opacity .2s ease}
+.app-header.compact{padding-top:calc(5px + env(safe-area-inset-top));padding-bottom:5px;border-radius:0 0 12px 12px}
+.app-header.compact .header-title{font-size:13px}
+.app-header.compact .header-sub{max-height:0;opacity:0;overflow:hidden}
+.app-header.compact .icon-btn{width:24px;height:24px;font-size:13px}
+.app-header.compact .today-pill{padding:2px 8px;font-size:10.5px}
+.app-header.compact .countdown{margin-top:4px;gap:6px}
+.app-header.compact .cd-box{padding:2px 6px;border-radius:8px}
+.app-header.compact .cd-num{font-size:13px}
+.app-header.compact .cd-label{font-size:9px;margin-top:0}
 /* ==================== 卡片/通用 ==================== */
 .card{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
 .card-title{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -1668,7 +1681,7 @@ function applyTheme(){
   var meta=document.querySelector('meta[name=theme-color]');
   if(meta)meta.setAttribute('content',D.settings.theme==='dark'?'#6366f1':'#0f3460');
 }
-var APP_VERSION='2026.09.18-v3.2';
+var APP_VERSION='2026.09.19-v3.3';
 var deferredInstall=null;
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();deferredInstall=e;
@@ -1772,6 +1785,14 @@ if(D.settings.pin)openPin('unlock');
 setupPWA();
 renderHeader();
 switchTab('today');
+/* 头部滚动收缩 */
+var hdrCompact=false;
+function updateCompact(){
+  var c=window.scrollY>48;
+  if(c!==hdrCompact){hdrCompact=c;$('#appHeader').classList.toggle('compact',c);}
+}
+window.addEventListener('scroll',updateCompact,{passive:true});
+updateCompact();
 setInterval(function(){
   if(state.tab==='today')renderToday();
   reminderTick();
